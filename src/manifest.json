@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Rename Tabs",
+  "version": "1.8.0",
+  "description": "Rename any browser tab with a custom title. Renames persist across refreshes. Includes rename lifetime controls, themes, font sizes, and full accessibility support.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "Tab Renamer — Click to rename this tab",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "tab-renamer",
+  "version": "1.8.0",
+  "description": "Rename any browser tab with a custom title. Renames persist across refreshes.",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "chrome-extension",
+    "browser-extension",
+    "tab"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.5.0",
+    "@types/chrome": "^0.1.43",
+    "@types/node": "^25.9.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  }
+}
