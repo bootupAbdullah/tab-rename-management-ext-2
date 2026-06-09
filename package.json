@@ -1,6 +1,6 @@
 {
   "name": "tab-renamer",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "description": "Rename any browser tab with a custom title. Renames persist across refreshes.",
   "scripts": {
     "build": "vite build",

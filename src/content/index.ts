@@ -29,12 +29,18 @@ function attachNewTabInterceptor(renames: Record<string, string>): void {
     window.__tabRenamerHandler = null
   }
 
+  if (window.__tabRenamerStorageHandler) {
+    chrome.storage.onChanged.removeListener(window.__tabRenamerStorageHandler)
+    window.__tabRenamerStorageHandler = null
+  }
+
   let cachedRenames = renames
-  chrome.storage.onChanged.addListener((changes, area) => {
+  window.__tabRenamerStorageHandler = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
     if (area === 'local' && changes['renames']) {
       cachedRenames = (changes['renames'].newValue as Record<string, string>) ?? {}
     }
-  })
+  }
+  chrome.storage.onChanged.addListener(window.__tabRenamerStorageHandler)
 
   window.__tabRenamerHandler = (e: MouseEvent) => {
     if (!cachedRenames[location.href]) return
@@ -82,5 +88,6 @@ function attachNewTabInterceptor(renames: Record<string, string>): void {
 declare global {
   interface Window {
     __tabRenamerHandler: ((e: MouseEvent) => void) | null
+    __tabRenamerStorageHandler: ((changes: Record<string, chrome.storage.StorageChange>, area: string) => void) | null
   }
 }
