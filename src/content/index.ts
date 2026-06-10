@@ -1,5 +1,7 @@
 import { getRenames, getSettings } from '@shared/storage'
 import { logger } from '@shared/logger'
+import { findRename } from '@shared/urlMatch'
+import type { Renames } from '@shared/types'
 
 const log = logger.content
 
@@ -43,7 +45,7 @@ function attachNewTabInterceptor(renames: Record<string, string>): void {
   chrome.storage.onChanged.addListener(window.__tabRenamerStorageHandler)
 
   window.__tabRenamerHandler = (e: MouseEvent) => {
-    if (!cachedRenames[location.href]) return
+    if (!findRename(cachedRenames, location.href)) return
     const anchor = (e.target as HTMLElement).closest('a')
     if (!anchor) return
     const href = anchor.getAttribute('href')
@@ -57,29 +59,51 @@ function attachNewTabInterceptor(renames: Record<string, string>): void {
 }
 
 ;(async () => {
-  const url = location.href
   const [renames, settings] = await Promise.all([getRenames(), getSettings()])
-  const customTitle = renames[url]
+  const customTitle = findRename(renames, location.href)
 
   if (customTitle) lockTitle(customTitle)
   if (customTitle && settings.openNewTab) attachNewTabInterceptor(renames)
 
   // Self-initialize when a rename is added or removed for this URL without re-injection
   chrome.storage.onChanged.addListener(async (changes, area) => {
-    if (area !== 'local' || !changes['renames']) return
-    const newRenames = (changes['renames'].newValue as Record<string, string>) ?? {}
-    const updatedTitle = newRenames[url]
-    const hadTitle = !!(changes['renames'].oldValue as Record<string, string> | undefined)?.[url]
+    if (area !== 'local') return
 
-    if (updatedTitle) {
-      lockTitle(updatedTitle)
-      const currentSettings = await getSettings()
-      if (currentSettings.openNewTab) attachNewTabInterceptor(newRenames)
-    } else if (hadTitle) {
-      unlockTitle()
-      if (window.__tabRenamerHandler) {
-        document.removeEventListener('click', window.__tabRenamerHandler)
-        window.__tabRenamerHandler = null
+    if (changes['renames']) {
+      const newRenames = (changes['renames'].newValue as Renames) ?? {}
+      const oldRenames = (changes['renames'].oldValue as Renames | undefined) ?? {}
+      const updatedTitle = findRename(newRenames, location.href)
+      const hadTitle = findRename(oldRenames, location.href) !== undefined
+
+      if (updatedTitle) {
+        lockTitle(updatedTitle)
+        const currentSettings = await getSettings()
+        if (currentSettings.openNewTab) attachNewTabInterceptor(newRenames)
+      } else if (hadTitle) {
+        unlockTitle()
+        if (window.__tabRenamerHandler) {
+          document.removeEventListener('click', window.__tabRenamerHandler)
+          window.__tabRenamerHandler = null
+        }
+      }
+    }
+
+    if (changes['settings']) {
+      const newSettings = changes['settings'].newValue as { openNewTab?: boolean } | undefined
+      const renames = await getRenames()
+      if (!findRename(renames, location.href)) return
+
+      if (newSettings?.openNewTab) {
+        attachNewTabInterceptor(renames)
+      } else {
+        if (window.__tabRenamerHandler) {
+          document.removeEventListener('click', window.__tabRenamerHandler)
+          window.__tabRenamerHandler = null
+        }
+        if (window.__tabRenamerStorageHandler) {
+          chrome.storage.onChanged.removeListener(window.__tabRenamerStorageHandler)
+          window.__tabRenamerStorageHandler = null
+        }
       }
     }
   })
