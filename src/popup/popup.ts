@@ -204,6 +204,7 @@ async function loadSettings(): Promise<void> {
   ccEl.setAttribute('aria-checked', String(ccEl.checked))
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  if (!tab) return
   if (tab.url && renames[tab.url]) input.value = renames[tab.url] ?? ''
 }
 loadSettings().catch(e => log.error('failed to load settings', e))
@@ -280,6 +281,7 @@ el('btn-rename').addEventListener('click', async () => {
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (!tab) { setStatus('Cannot identify tab.', true); return }
     const url = tab.url ?? ''
     if (url.startsWith('edge://') || url.startsWith('chrome://') || url.startsWith('about:')) {
       setStatus('Only works on regular websites.', true)
@@ -308,6 +310,7 @@ el('btn-rename').addEventListener('click', async () => {
 el('btn-reset').addEventListener('click', async () => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (!tab) { setStatus('Cannot identify tab.', true); return }
     const url = tab.url ?? ''
     const renames = await getRenames()
 
