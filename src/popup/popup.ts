@@ -321,7 +321,8 @@ el('btn-reset').addEventListener('click', async () => {
 
     delete renames[url]
     await setRenames(renames)
-    await chrome.tabs.reload(tab.id!)
+    if (tab.id == null) { setStatus('Cannot reload tab.', true); return }
+    await chrome.tabs.reload(tab.id)
     input.value = ''
     setStatus('Title restored.')
     log.info('reset tab title', { url })
