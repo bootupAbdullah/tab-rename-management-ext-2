@@ -6,12 +6,19 @@ export interface Settings {
   closeAfterRename: boolean
   clearOnNavigate: boolean
   clearOnClose: boolean
+  autoCapitalize: boolean
   theme: ThemeName
   fontSize: FontSizeName
 }
 
 export type Renames = Record<string, string>
 export type TabUrls = Record<string, string>
+
+export interface JumpToTabMessage {
+  type: 'jump-to-tab'
+  tabId: number
+  windowId?: number
+}
 
 export interface StorageSchema {
   settings: Settings
@@ -24,6 +31,7 @@ export const DEFAULT_SETTINGS: Settings = {
   closeAfterRename: true,
   clearOnNavigate: false,
   clearOnClose: false,
+  autoCapitalize: false,
   theme: 'default',
   fontSize: 'default',
 }

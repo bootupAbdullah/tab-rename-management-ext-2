@@ -42,6 +42,25 @@
       letter-spacing: 0.06em;
       margin-bottom: 4px;
     }
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .title-row label { margin-bottom: 0; }
+    .mini-toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mini-toggle-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
     input[type="text"] {
       width: 100%;
       padding: 8px 10px;
@@ -124,7 +143,12 @@
       color: white;
       letter-spacing: 0.01em;
     }
-    .settings-body { padding: 8px 16px 12px; }
+    .settings-body {
+      padding: 8px 16px 12px;
+      max-height: 420px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
     .setting-row {
       display: flex;
       align-items: center;
@@ -309,6 +333,85 @@
       color: #ccc;
       padding-left: 2px;
     }
+    .footer-icon-btn {
+      background: none;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      color: #ccc;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s;
+      flex: none;
+    }
+    .footer-icon-btn:hover { color: #6c5ce7; }
+    .footer-icon-btn.active { color: #6c5ce7; }
+
+    /* ── Renamed tabs panel ── */
+    .tabs-panel {
+      display: none;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #f0f0f0;
+      max-height: 180px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .tabs-panel.open { display: block; }
+    .tabs-panel-empty {
+      font-size: 11px;
+      color: #aaa;
+      text-align: center;
+      padding: 10px 0;
+    }
+    .tab-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      margin-bottom: 6px;
+      border: 1px solid #ececec;
+      border-radius: 8px;
+      background: #fafafa;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .tab-row:hover { opacity: 0.75; }
+    .tab-row:last-child { margin-bottom: 0; }
+    .tab-row-favicon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      border-radius: 3px;
+    }
+    .tab-row-title {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tab-row-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      color: #999;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s, color 0.15s;
+    }
+    .tab-row:hover .tab-row-close { opacity: 1; }
+    .tab-row-close:focus-visible { opacity: 1; }
+    .tab-row-close:hover {
+      background: #ffe3e3;
+      color: #e03131;
+    }
   </style>
 </head>
 <body>
@@ -323,7 +426,16 @@
       <h1>Rename this tab</h1>
     </div>
     <div class="body">
-      <label for="new-title">New title</label>
+      <div class="title-row">
+        <label for="new-title">New title</label>
+        <div class="mini-toggle-wrap">
+          <span class="mini-toggle-label">Auto-caps</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-autocap" aria-checked="false" aria-label="Automatically capitalize words when renaming">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
       <input type="text" id="new-title" placeholder="Enter custom tab name…" autofocus>
       <div class="row">
         <button id="btn-rename" aria-label="Rename this tab">Rename</button>
@@ -331,13 +443,21 @@
       </div>
       <div id="status"></div>
       <div class="footer">
-        <span class="footer-left" id="footer-status"></span>
+        <button id="btn-tabs-list" class="footer-icon-btn" title="Renamed tabs" aria-label="Show renamed tabs" aria-expanded="false" aria-controls="tabs-panel">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
         <button id="btn-settings" title="Settings" aria-label="Open settings">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
         </button>
+      </div>
+      <div class="tabs-panel" id="tabs-panel">
+        <div class="tabs-panel-empty" id="tabs-panel-empty">No renamed tabs open right now.</div>
       </div>
     </div>
   </div>
@@ -477,7 +597,7 @@
 
       <!-- Version -->
       <div style="text-align:right; padding-top: 10px;">
-        <span style="font-size: 10px; color: #ccc;">v2.0.0</span>
+        <span style="font-size: 10px; color: #ccc;">v2.6.0</span>
       </div>
 
     </div>

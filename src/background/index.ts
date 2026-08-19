@@ -1,7 +1,22 @@
 import { getSettings, getRenames, getTabUrls, setRenames, setTabUrls } from '@shared/storage'
 import { logger } from '@shared/logger'
+import type { JumpToTabMessage } from '@shared/types'
 
 const log = logger.background
+
+chrome.runtime.onMessage.addListener((message: JumpToTabMessage) => {
+  if (message?.type !== 'jump-to-tab') return
+
+  const { tabId, windowId } = message
+  ;(async () => {
+    try {
+      if (typeof windowId === 'number') await chrome.windows.update(windowId, { focused: true })
+      await chrome.tabs.update(tabId, { active: true })
+    } catch (e) {
+      log.error('failed to jump to tab', e)
+    }
+  })()
+})
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
   const settings = await getSettings()

@@ -1,7 +1,8 @@
 import { getSettings, setSettings, getRenames, setRenames } from '@shared/storage'
 import { logger } from '@shared/logger'
 import { DEFAULT_SETTINGS } from '@shared/types'
-import type { Settings, ThemeName, FontSizeName } from '@shared/types'
+import type { Settings, ThemeName, FontSizeName, JumpToTabMessage } from '@shared/types'
+import { findRename } from '@shared/urlMatch'
 
 const log = logger.popup
 
@@ -50,6 +51,30 @@ const FONT_SIZES: Record<FontSizeName, Record<string, string>> = {
   large:   { base: '15px', label: '12px', desc: '12px', status: '12px', width: '280px', headerPad: '11px 16px 9px',  bodyPad: '9px 16px 7px',   inputPad: '8px 10px',  btnPad: '8px 0',  rowGap: '7px', settingsBodyPad: '6px 16px 10px', settingRowPad: '8px 0'  },
   larger:  { base: '17px', label: '13px', desc: '13px', status: '13px', width: '300px', headerPad: '12px 18px 10px', bodyPad: '10px 18px 8px',  inputPad: '9px 12px',  btnPad: '9px 0',  rowGap: '8px', settingsBodyPad: '4px 18px 8px',  settingRowPad: '6px 0'  },
   huge:    { base: '20px', label: '15px', desc: '14px', status: '13px', width: '320px', headerPad: '13px 20px 11px', bodyPad: '12px 20px 10px', inputPad: '11px 14px', btnPad: '11px 0', rowGap: '9px', settingsBodyPad: '2px 20px 6px',  settingRowPad: '5px 0'  },
+}
+
+// ── Auto-capitalize ──
+const CASE_EXCEPTIONS: Record<string, string> = {
+  iphone: 'iPhone', ipad: 'iPad', ipod: 'iPod', imac: 'iMac',
+  ios: 'iOS', ipados: 'iPadOS', macos: 'macOS', watchos: 'watchOS', tvos: 'tvOS',
+  youtube: 'YouTube', github: 'GitHub', gitlab: 'GitLab', linkedin: 'LinkedIn',
+  paypal: 'PayPal', wifi: 'WiFi', javascript: 'JavaScript', typescript: 'TypeScript',
+}
+
+function autoCapitalizeText(text: string): string {
+  return text
+    .split(/(\s+)/)
+    .map(part => {
+      if (part === '' || /^\s+$/.test(part)) return part
+      const exception = CASE_EXCEPTIONS[part.toLowerCase()]
+      if (exception) return exception
+      return part.charAt(0).toUpperCase() + part.slice(1)
+    })
+    .join('')
+}
+
+function formatTitleIfEnabled(text: string): string {
+  return el<HTMLInputElement>('toggle-autocap').checked ? autoCapitalizeText(text) : text
 }
 
 // ── DOM helpers ──
@@ -142,6 +167,13 @@ function applyTheme(name: ThemeName): void {
   el('btn-settings').style.color = t['gearColor'] ?? ''
   el('status').style.color       = t['statusColor'] ?? ''
 
+  document.querySelectorAll<HTMLElement>('.tab-row').forEach(e => {
+    e.style.background   = t['inputBg'] ?? ''
+    e.style.borderColor  = t['inputBorder'] ?? ''
+  })
+  document.querySelectorAll<HTMLElement>('.tab-row-title').forEach(e => e.style.color = t['inputText'] ?? '')
+  document.querySelectorAll<HTMLElement>('.footer, .tabs-panel').forEach(e => e.style.borderTopColor = t['rowBorder'] ?? '')
+
   document.querySelectorAll<HTMLElement>('.theme-preview').forEach(p => {
     const theme = p.dataset['theme'] as ThemeName
     p.classList.toggle('active', theme === name)
@@ -168,6 +200,71 @@ for (const id of ['lifetime', 'appearance']) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(id) }
   })
 }
+
+// ── Renamed tabs panel ──
+el('btn-tabs-list').addEventListener('click', () => {
+  const panel = el('tabs-panel')
+  const btn   = el('btn-tabs-list')
+  const isOpen = panel.classList.contains('open')
+  panel.classList.toggle('open', !isOpen)
+  btn.classList.toggle('active', !isOpen)
+  btn.setAttribute('aria-expanded', String(!isOpen))
+})
+
+function jumpToTab(row: HTMLElement): void {
+  const tabId    = Number(row.dataset['tabId'])
+  const windowId = Number(row.dataset['windowId'])
+  if (!Number.isFinite(tabId)) return
+
+  const message: JumpToTabMessage = { type: 'jump-to-tab', tabId }
+  if (Number.isFinite(windowId)) message.windowId = windowId
+  chrome.runtime.sendMessage(message).catch(err => log.error('failed to send jump-to-tab message', err))
+  window.close()
+}
+
+function closeTabRow(row: HTMLElement): void {
+  const tabId = Number(row.dataset['tabId'])
+  if (!Number.isFinite(tabId)) return
+
+  chrome.tabs.remove(tabId)
+    .then(() => {
+      row.remove()
+      const panel = el('tabs-panel')
+      if (!panel.querySelector('.tab-row')) {
+        const empty = document.createElement('div')
+        empty.className = 'tabs-panel-empty'
+        empty.id = 'tabs-panel-empty'
+        empty.textContent = 'No renamed tabs open right now.'
+        panel.appendChild(empty)
+      }
+    })
+    .catch(err => log.error('failed to close tab', err))
+}
+
+el('tabs-panel').addEventListener('click', (e: MouseEvent) => {
+  const closeBtn = (e.target as HTMLElement).closest('.tab-row-close') as HTMLElement | null
+  if (closeBtn) {
+    const row = closeBtn.closest('.tab-row') as HTMLElement | null
+    if (row) closeTabRow(row)
+    return
+  }
+  const row = (e.target as HTMLElement).closest('.tab-row') as HTMLElement | null
+  if (row) jumpToTab(row)
+})
+el('tabs-panel').addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return
+  const closeBtn = (e.target as HTMLElement).closest('.tab-row-close') as HTMLElement | null
+  if (closeBtn) {
+    e.preventDefault()
+    const row = closeBtn.closest('.tab-row') as HTMLElement | null
+    if (row) closeTabRow(row)
+    return
+  }
+  const row = (e.target as HTMLElement).closest('.tab-row') as HTMLElement | null
+  if (!row) return
+  e.preventDefault()
+  jumpToTab(row)
+})
 
 // ── View switching ──
 el('btn-settings').addEventListener('click', () => {
@@ -203,11 +300,74 @@ async function loadSettings(): Promise<void> {
   ccEl.checked = settings.clearOnClose
   ccEl.setAttribute('aria-checked', String(ccEl.checked))
 
+  const acEl = el<HTMLInputElement>('toggle-autocap')
+  acEl.checked = settings.autoCapitalize
+  acEl.setAttribute('aria-checked', String(acEl.checked))
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   if (!tab) return
   if (tab.url && renames[tab.url]) input.value = renames[tab.url] ?? ''
 }
-loadSettings().catch(e => log.error('failed to load settings', e))
+loadSettings()
+  .then(() => loadTabsList())
+  .catch(e => log.error('failed to load popup data', e))
+
+const FALLBACK_FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23bbb' stroke-width='2'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18'/%3E%3C/svg%3E"
+
+// ── Load renamed tabs list ──
+async function loadTabsList(): Promise<void> {
+  const [tabs, renames] = await Promise.all([chrome.tabs.query({}), getRenames()])
+  const panel = el('tabs-panel')
+  const matches = tabs.filter(t => t.url && findRename(renames, t.url) !== undefined)
+
+  panel.innerHTML = ''
+
+  if (matches.length === 0) {
+    const empty = document.createElement('div')
+    empty.className = 'tabs-panel-empty'
+    empty.id = 'tabs-panel-empty'
+    empty.textContent = 'No renamed tabs open right now.'
+    panel.appendChild(empty)
+    return
+  }
+
+  for (const tab of matches) {
+    const title = findRename(renames, tab.url ?? '') ?? ''
+    const row = document.createElement('div')
+    row.className = 'tab-row'
+    if (tab.id != null) row.dataset['tabId'] = String(tab.id)
+    if (tab.windowId != null) row.dataset['windowId'] = String(tab.windowId)
+    row.setAttribute('role', 'button')
+    row.tabIndex = 0
+    row.setAttribute('aria-label', `Switch to tab: ${title}`)
+    row.style.background  = THEMES[currentTheme]?.['inputBg'] ?? ''
+    row.style.borderColor = THEMES[currentTheme]?.['inputBorder'] ?? ''
+
+    const favicon = document.createElement('img')
+    favicon.className = 'tab-row-favicon'
+    favicon.src = tab.favIconUrl || FALLBACK_FAVICON
+    favicon.alt = ''
+    favicon.addEventListener('error', () => { favicon.src = FALLBACK_FAVICON })
+    row.appendChild(favicon)
+
+    const titleEl = document.createElement('span')
+    titleEl.className = 'tab-row-title'
+    titleEl.textContent = title
+    titleEl.style.color = THEMES[currentTheme]?.['inputText'] ?? ''
+    row.appendChild(titleEl)
+
+    const closeEl = document.createElement('span')
+    closeEl.className = 'tab-row-close'
+    closeEl.title = 'Close tab'
+    closeEl.setAttribute('role', 'button')
+    closeEl.setAttribute('aria-label', 'Close tab')
+    closeEl.tabIndex = 0
+    closeEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    row.appendChild(closeEl)
+
+    panel.appendChild(row)
+  }
+}
 
 // ── Save settings ──
 async function saveSettings(): Promise<void> {
@@ -216,6 +376,7 @@ async function saveSettings(): Promise<void> {
     closeAfterRename: el<HTMLInputElement>('toggle-close').checked,
     clearOnNavigate:  el<HTMLInputElement>('toggle-clear-navigate').checked,
     clearOnClose:     el<HTMLInputElement>('toggle-clear-close').checked,
+    autoCapitalize:   el<HTMLInputElement>('toggle-autocap').checked,
     theme:    currentTheme,
     fontSize: (document.querySelector<HTMLButtonElement>('.fontsize-btn.active')?.dataset['size'] ?? 'default') as FontSizeName,
   }
@@ -236,6 +397,10 @@ el<HTMLInputElement>('toggle-clear-navigate').addEventListener('change', functio
   saveSettings().catch(e => log.error('save failed', e))
 })
 el<HTMLInputElement>('toggle-clear-close').addEventListener('change', function () {
+  this.setAttribute('aria-checked', String(this.checked))
+  saveSettings().catch(e => log.error('save failed', e))
+})
+el<HTMLInputElement>('toggle-autocap').addEventListener('change', function () {
   this.setAttribute('aria-checked', String(this.checked))
   saveSettings().catch(e => log.error('save failed', e))
 })
@@ -268,15 +433,22 @@ el('btn-reset-settings').addEventListener('click', async () => {
   el<HTMLInputElement>('toggle-clear-navigate').setAttribute('aria-checked', 'false')
   el<HTMLInputElement>('toggle-clear-close').checked = false
   el<HTMLInputElement>('toggle-clear-close').setAttribute('aria-checked', 'false')
+  el<HTMLInputElement>('toggle-autocap').checked = false
+  el<HTMLInputElement>('toggle-autocap').setAttribute('aria-checked', 'false')
   currentTheme = 'default'
   applyTheme('default')
   applyFontSize('default')
   log.info('settings reset to defaults')
 })
 
+input.addEventListener('blur', () => {
+  input.value = formatTitleIfEnabled(input.value)
+})
+
 // ── Rename ──
 el('btn-rename').addEventListener('click', async () => {
-  const val = input.value.trim()
+  const val = formatTitleIfEnabled(input.value.trim())
+  input.value = val
   if (!val) { setStatus('Enter a title first.', true); return }
 
   try {
