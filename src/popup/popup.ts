@@ -47,10 +47,10 @@ const THEMES: Record<ThemeName, Record<string, string>> = {
 
 // ── Font size definitions ──
 const FONT_SIZES: Record<FontSizeName, Record<string, string>> = {
-  default: { base: '13px', label: '11px', desc: '11px', status: '11px', width: '280px', headerPad: '10px 16px 8px',  bodyPad: '8px 16px 6px',   inputPad: '7px 10px',  btnPad: '7px 0',  rowGap: '7px', settingsBodyPad: '6px 16px 10px', settingRowPad: '8px 0'  },
-  large:   { base: '15px', label: '12px', desc: '12px', status: '12px', width: '280px', headerPad: '11px 16px 9px',  bodyPad: '9px 16px 7px',   inputPad: '8px 10px',  btnPad: '8px 0',  rowGap: '7px', settingsBodyPad: '6px 16px 10px', settingRowPad: '8px 0'  },
-  larger:  { base: '17px', label: '13px', desc: '13px', status: '13px', width: '280px', headerPad: '12px 18px 10px', bodyPad: '10px 18px 8px',  inputPad: '9px 12px',  btnPad: '9px 0',  rowGap: '8px', settingsBodyPad: '4px 18px 8px',  settingRowPad: '6px 0'  },
-  huge:    { base: '20px', label: '15px', desc: '14px', status: '13px', width: '280px', headerPad: '13px 20px 11px', bodyPad: '12px 20px 10px', inputPad: '11px 14px', btnPad: '11px 0', rowGap: '9px', settingsBodyPad: '2px 20px 6px',  settingRowPad: '5px 0'  },
+  default: { base: '13px', label: '11px', desc: '11px', status: '11px', width: '280px', headerPad: '10px 16px 8px',  bodyPad: '8px 16px 6px',   inputPad: '7px 10px',  btnPad: '7px 0',  rowGap: '7px', settingsBodyPad: '6px 16px 10px', settingRowPad: '8px 0', tabTitle: '12px', tabPad: '7px 8px',   tabFavicon: '14px' },
+  large:   { base: '15px', label: '12px', desc: '12px', status: '12px', width: '280px', headerPad: '11px 16px 9px',  bodyPad: '9px 16px 7px',   inputPad: '8px 10px',  btnPad: '8px 0',  rowGap: '7px', settingsBodyPad: '6px 16px 10px', settingRowPad: '8px 0', tabTitle: '13px', tabPad: '8px 9px',   tabFavicon: '15px' },
+  larger:  { base: '17px', label: '13px', desc: '13px', status: '13px', width: '280px', headerPad: '12px 18px 10px', bodyPad: '10px 18px 8px',  inputPad: '9px 12px',  btnPad: '9px 0',  rowGap: '8px', settingsBodyPad: '4px 18px 8px',  settingRowPad: '6px 0', tabTitle: '15px', tabPad: '9px 10px',  tabFavicon: '17px' },
+  huge:    { base: '20px', label: '15px', desc: '14px', status: '13px', width: '280px', headerPad: '13px 20px 11px', bodyPad: '12px 20px 10px', inputPad: '11px 14px', btnPad: '11px 0', rowGap: '9px', settingsBodyPad: '2px 20px 6px',  settingRowPad: '5px 0', tabTitle: '17px', tabPad: '10px 11px', tabFavicon: '19px' },
 }
 
 // ── Auto-capitalize ──
@@ -92,6 +92,7 @@ function setStatus(msg: string, isError = false): void {
 }
 
 let currentTheme: ThemeName = 'default'
+let currentFontSize: FontSizeName = 'default'
 
 // ── Apply font size ──
 function applyFontSize(name: FontSizeName): void {
@@ -131,6 +132,14 @@ function applyFontSize(name: FontSizeName): void {
   })
 
   el('btn-reset-settings').style.fontSize = f['desc'] ?? ''
+
+  document.querySelectorAll<HTMLElement>('.tab-row').forEach(e => e.style.padding = f['tabPad'] ?? '')
+  document.querySelectorAll<HTMLElement>('.tab-row-title').forEach(e => e.style.fontSize = f['tabTitle'] ?? '')
+  document.querySelectorAll<HTMLElement>('.tab-row-favicon').forEach(e => {
+    e.style.width  = f['tabFavicon'] ?? ''
+    e.style.height = f['tabFavicon'] ?? ''
+  })
+  document.querySelectorAll<HTMLElement>('.tabs-panel-empty').forEach(e => e.style.fontSize = f['desc'] ?? '')
 
   document.querySelectorAll<HTMLButtonElement>('.fontsize-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset['size'] === name)
@@ -235,6 +244,7 @@ function closeTabRow(row: HTMLElement): void {
         empty.className = 'tabs-panel-empty'
         empty.id = 'tabs-panel-empty'
         empty.textContent = 'No renamed tabs open right now.'
+        empty.style.fontSize = FONT_SIZES[currentFontSize]?.['desc'] ?? ''
         panel.appendChild(empty)
       }
     })
@@ -282,7 +292,8 @@ async function loadSettings(): Promise<void> {
 
   currentTheme = settings.theme
   applyTheme(currentTheme)
-  applyFontSize(settings.fontSize)
+  currentFontSize = settings.fontSize
+  applyFontSize(currentFontSize)
 
   const closeEl = el<HTMLInputElement>('toggle-close')
   closeEl.checked = settings.closeAfterRename
@@ -327,6 +338,7 @@ async function loadTabsList(): Promise<void> {
     empty.className = 'tabs-panel-empty'
     empty.id = 'tabs-panel-empty'
     empty.textContent = 'No renamed tabs open right now.'
+    empty.style.fontSize = FONT_SIZES[currentFontSize]?.['desc'] ?? ''
     panel.appendChild(empty)
     return
   }
@@ -342,11 +354,14 @@ async function loadTabsList(): Promise<void> {
     row.setAttribute('aria-label', `Switch to tab: ${title}`)
     row.style.background  = THEMES[currentTheme]?.['inputBg'] ?? ''
     row.style.borderColor = THEMES[currentTheme]?.['inputBorder'] ?? ''
+    row.style.padding = FONT_SIZES[currentFontSize]?.['tabPad'] ?? ''
 
     const favicon = document.createElement('img')
     favicon.className = 'tab-row-favicon'
     favicon.src = tab.favIconUrl || FALLBACK_FAVICON
     favicon.alt = ''
+    favicon.style.width  = FONT_SIZES[currentFontSize]?.['tabFavicon'] ?? ''
+    favicon.style.height = FONT_SIZES[currentFontSize]?.['tabFavicon'] ?? ''
     favicon.addEventListener('error', () => { favicon.src = FALLBACK_FAVICON })
     row.appendChild(favicon)
 
@@ -354,6 +369,7 @@ async function loadTabsList(): Promise<void> {
     titleEl.className = 'tab-row-title'
     titleEl.textContent = title
     titleEl.style.color = THEMES[currentTheme]?.['inputText'] ?? ''
+    titleEl.style.fontSize = FONT_SIZES[currentFontSize]?.['tabTitle'] ?? ''
     row.appendChild(titleEl)
 
     const closeEl = document.createElement('span')
@@ -417,7 +433,8 @@ document.querySelectorAll<HTMLElement>('.theme-preview').forEach(preview => {
 // ── Font size selection ──
 document.querySelectorAll<HTMLButtonElement>('.fontsize-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
-    applyFontSize((btn.dataset['size'] as FontSizeName) ?? 'default')
+    currentFontSize = (btn.dataset['size'] as FontSizeName) ?? 'default'
+    applyFontSize(currentFontSize)
     await saveSettings()
   })
 })
@@ -437,7 +454,8 @@ el('btn-reset-settings').addEventListener('click', async () => {
   el<HTMLInputElement>('toggle-autocap').setAttribute('aria-checked', 'false')
   currentTheme = 'default'
   applyTheme('default')
-  applyFontSize('default')
+  currentFontSize = 'default'
+  applyFontSize(currentFontSize)
   log.info('settings reset to defaults')
 })
 
