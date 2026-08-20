@@ -1,0 +1,13 @@
+name: 🗒️ Blank issue
+description: Create a new issue from scratch
+title: ''
+labels: []
+assignees: []
+body:
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: Description
+      description: Describe your issue or request here.
+    validations:
+      required: true

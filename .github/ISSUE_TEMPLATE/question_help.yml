@@ -1,0 +1,51 @@
+name: ❓ Question/Help
+description: Ask for help or clarification on how to use the project
+title: '[HELP] '
+labels:
+  - question
+assignees: []
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What do you need help with? Be as specific as possible.
+    validations:
+      required: true
+  - type: textarea
+    id: what-tried
+    attributes:
+      label: What I've Tried
+      description: What have you already attempted? Include any error messages or unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-outcome
+    attributes:
+      label: Expected Outcome
+      description: What are you trying to achieve or what result do you expect?
+  - type: textarea
+    id: code-examples
+    attributes:
+      label: Code Examples
+      description: Share relevant code snippets, configurations, or examples
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Relevant environment details
+      placeholder: |
+        - OS: [e.g. Windows 10, macOS 12.1]
+        - Version: [project version]
+        - Other relevant tools/versions
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      description: Please confirm you have done the following
+      options:
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have checked the documentation
+          required: true

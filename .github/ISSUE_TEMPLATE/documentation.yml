@@ -1,0 +1,44 @@
+name: 📚 Documentation
+description: Report issues with documentation or request documentation improvements
+title: '[DOCS] '
+labels:
+  - documentation
+assignees: []
+body:
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What kind of documentation issue is this?
+      options:
+        - Missing documentation
+        - Incorrect/outdated information
+        - Unclear instructions
+        - Broken links
+        - Typo/grammar
+        - Request new documentation
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      description: URL or path to the documentation (if applicable)
+      placeholder: https://example.com/docs/page or docs/folder/file.md
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the documentation issue or improvement needed
+    validations:
+      required: true
+  - type: textarea
+    id: expected-content
+    attributes:
+      label: Expected Content
+      description: What should the documentation say or include?
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information, screenshots, or examples
