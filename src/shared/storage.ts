@@ -20,10 +20,10 @@ export async function setRenames(renames: Renames): Promise<void> {
 }
 
 export async function getTabUrls(): Promise<TabUrls> {
-  const { tabUrls } = await chrome.storage.local.get('tabUrls')
+  const { tabUrls } = await chrome.storage.session.get('tabUrls')
   return (tabUrls as TabUrls) ?? {}
 }
 
 export async function setTabUrls(tabUrls: TabUrls): Promise<void> {
-  await chrome.storage.local.set({ tabUrls })
+  await chrome.storage.session.set({ tabUrls })
 }

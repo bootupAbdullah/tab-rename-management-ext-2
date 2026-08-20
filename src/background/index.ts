@@ -55,15 +55,3 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   await setRenames(renames)
   log.info('cleared rename on navigation', { tabId, from: previousUrl, to: newUrl })
 })
-
-chrome.runtime.onStartup.addListener(async () => {
-  const currentTabs = await chrome.tabs.query({})
-  const currentIds = new Set(currentTabs.map((t) => t.id))
-  const tabUrls = await getTabUrls()
-
-  for (const id of Object.keys(tabUrls)) {
-    if (!currentIds.has(Number(id))) delete tabUrls[id]
-  }
-  await setTabUrls(tabUrls)
-  log.debug('cleaned stale tabUrls on startup')
-})
