@@ -286,6 +286,8 @@ el('btn-back').addEventListener('click', () => {
   el('view-main').style.display    = 'block'
 })
 
+el('version-label').textContent = `v${chrome.runtime.getManifest().version}`
+
 // ── Load settings on open ──
 async function loadSettings(): Promise<void> {
   const [settings, renames] = await Promise.all([getSettings(), getRenames()])
