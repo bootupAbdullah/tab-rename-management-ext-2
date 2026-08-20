@@ -49,8 +49,8 @@ const THEMES: Record<ThemeName, Record<string, string>> = {
 const FONT_SIZES: Record<FontSizeName, Record<string, string>> = {
   default: { base: '13px', label: '11px', desc: '11px', status: '11px', width: '280px', headerPad: '10px 16px 8px',  bodyPad: '8px 16px 6px',   inputPad: '7px 10px',  btnPad: '7px 0',  rowGap: '7px', settingsBodyPad: '6px 16px 10px', settingRowPad: '8px 0'  },
   large:   { base: '15px', label: '12px', desc: '12px', status: '12px', width: '280px', headerPad: '11px 16px 9px',  bodyPad: '9px 16px 7px',   inputPad: '8px 10px',  btnPad: '8px 0',  rowGap: '7px', settingsBodyPad: '6px 16px 10px', settingRowPad: '8px 0'  },
-  larger:  { base: '17px', label: '13px', desc: '13px', status: '13px', width: '300px', headerPad: '12px 18px 10px', bodyPad: '10px 18px 8px',  inputPad: '9px 12px',  btnPad: '9px 0',  rowGap: '8px', settingsBodyPad: '4px 18px 8px',  settingRowPad: '6px 0'  },
-  huge:    { base: '20px', label: '15px', desc: '14px', status: '13px', width: '320px', headerPad: '13px 20px 11px', bodyPad: '12px 20px 10px', inputPad: '11px 14px', btnPad: '11px 0', rowGap: '9px', settingsBodyPad: '2px 20px 6px',  settingRowPad: '5px 0'  },
+  larger:  { base: '17px', label: '13px', desc: '13px', status: '13px', width: '280px', headerPad: '12px 18px 10px', bodyPad: '10px 18px 8px',  inputPad: '9px 12px',  btnPad: '9px 0',  rowGap: '8px', settingsBodyPad: '4px 18px 8px',  settingRowPad: '6px 0'  },
+  huge:    { base: '20px', label: '15px', desc: '14px', status: '13px', width: '280px', headerPad: '13px 20px 11px', bodyPad: '12px 20px 10px', inputPad: '11px 14px', btnPad: '11px 0', rowGap: '9px', settingsBodyPad: '2px 20px 6px',  settingRowPad: '5px 0'  },
 }
 
 // ── Auto-capitalize ──
